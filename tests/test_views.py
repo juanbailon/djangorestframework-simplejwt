@@ -1,10 +1,10 @@
-from importlib import reload
 from datetime import timedelta
+from importlib import reload
 from unittest.mock import patch
-from freezegun import freeze_time
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from freezegun import freeze_time
 from rest_framework.test import APIRequestFactory
 
 from rest_framework_simplejwt import serializers
@@ -162,30 +162,28 @@ class TestTokenRefreshView(APIViewTestCase):
 
     def test_it_should_return_401_if_family_is_blacklisted(self):
         token = RefreshToken.for_user(self.user)
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 200)
 
         token.blacklist_family()
 
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))
         self.assertIn("blacklisted", res.data.get("detail"))
 
-
-    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes= 30))
+    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes=30))
     def test_it_should_return_401_if_family_is_expired(self):
-
         with freeze_time(aware_utcnow() - timedelta(minutes=31)):
             token = RefreshToken.for_user(self.user)
-            res =  self.view_post(data={"refresh": str(token)})
+            res = self.view_post(data={"refresh": str(token)})
 
             self.assertEqual(res.status_code, 200)
 
-        res =  self.view_post(data={"refresh": str(token)})
-        
+        res = self.view_post(data={"refresh": str(token)})
+
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))
         self.assertIn("expired", res.data.get("detail"))
@@ -394,28 +392,27 @@ class TestTokenVerifyView(APIViewTestCase):
 
     def test_it_should_return_401_if_family_is_blacklisted(self):
         token = RefreshToken.for_user(self.user)
-        res =  self.view_post(data={"token": str(token)})
+        res = self.view_post(data={"token": str(token)})
 
         self.assertEqual(res.status_code, 200)
 
         token.blacklist_family()
 
-        res =  self.view_post(data={"token": str(token)})
+        res = self.view_post(data={"token": str(token)})
 
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))
         self.assertIn("blacklisted", res.data.get("detail"))
 
-    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes= 30))
+    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes=30))
     def test_it_should_return_401_if_family_is_expired(self):
-
         with freeze_time(aware_utcnow() - timedelta(minutes=31)):
             token = RefreshToken.for_user(self.user)
-            res =  self.view_post(data={"token": str(token)})
+            res = self.view_post(data={"token": str(token)})
 
             self.assertEqual(res.status_code, 200)
 
-        res =  self.view_post(data={"token": str(token)})
+        res = self.view_post(data={"token": str(token)})
 
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))
@@ -494,20 +491,19 @@ class TestTokenBlacklistView(APIViewTestCase):
         token = RefreshToken.for_user(self.user)
         token.blacklist_family()
 
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))
         self.assertIn("blacklisted", res.data.get("detail"))
 
-    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes= 30))
+    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes=30))
     def test_it_should_return_401_if_family_is_expired(self):
-
         with freeze_time(aware_utcnow() - timedelta(minutes=31)):
             token = RefreshToken.for_user(self.user)
 
-        res =  self.view_post(data={"refresh": str(token)})
-        
+        res = self.view_post(data={"refresh": str(token)})
+
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))
         self.assertIn("expired", res.data.get("detail"))
@@ -546,7 +542,7 @@ class TestTokenFamilyBlacklistView(APIViewTestCase):
 
     def test_it_should_return_200_if_everything_ok(self):
         token = RefreshToken.for_user(self.user)
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 200)
 
@@ -554,7 +550,7 @@ class TestTokenFamilyBlacklistView(APIViewTestCase):
         token = RefreshToken()
         token.blacklist()
 
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 401)
         self.assertIn("Token", res.data.get("detail"))
@@ -562,26 +558,25 @@ class TestTokenFamilyBlacklistView(APIViewTestCase):
 
     def test_it_should_return_401_if_family_is_blacklisted(self):
         token = RefreshToken.for_user(self.user)
-        
+
         # here the family gets blacklisted
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 200)
 
         # here we should get the 401
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))
         self.assertIn("blacklisted", res.data.get("detail"))
 
-    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes= 30))
+    @override_api_settings(TOKEN_FAMILY_LIFETIME=timedelta(minutes=30))
     def test_it_should_return_401_if_family_is_expired(self):
-
         with freeze_time(aware_utcnow() - timedelta(minutes=31)):
             token = RefreshToken.for_user(self.user)
 
-        res =  self.view_post(data={"refresh": str(token)})
+        res = self.view_post(data={"refresh": str(token)})
 
         self.assertEqual(res.status_code, 401)
         self.assertIn("family", res.data.get("detail"))

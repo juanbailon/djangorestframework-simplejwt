@@ -7,12 +7,16 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 
-from .exceptions import TokenError, TokenFamilyNotConfigured, RefreshTokenBlacklistedError
+from .cache import blacklist_cache
+from .exceptions import (
+    RefreshTokenBlacklistedError,
+    TokenError,
+    TokenFamilyNotConfigured,
+)
 from .models import TokenUser
 from .settings import api_settings
-from .tokens import RefreshToken, SlidingToken, Token, UntypedToken, FamilyMixin
-from .cache import blacklist_cache
 from .token_blacklist.models import BlacklistedToken
+from .tokens import FamilyMixin, RefreshToken, SlidingToken, Token, UntypedToken
 
 AuthUser = TypeVar("AuthUser", AbstractBaseUser, TokenUser)
 
@@ -143,7 +147,7 @@ class TokenRefreshSerializer(serializers.Serializer):
             data["refresh"] = str(refresh)
 
         return data
-    
+
     def _get_refresh_token(self, token_str: str) -> RefreshToken:
         """
         Handles refresh token instantiation and family blacklisting if enabled.
@@ -152,9 +156,9 @@ class TokenRefreshSerializer(serializers.Serializer):
             return self.token_class(token_str)
         except RefreshTokenBlacklistedError as e:
             if (
-                api_settings.TOKEN_FAMILY_ENABLED and
-                api_settings.TOKEN_FAMILY_BLACKLIST_ON_REUSE and
-                "rest_framework_simplejwt.token_family" in settings.INSTALLED_APPS
+                api_settings.TOKEN_FAMILY_ENABLED
+                and api_settings.TOKEN_FAMILY_BLACKLIST_ON_REUSE
+                and "rest_framework_simplejwt.token_family" in settings.INSTALLED_APPS
             ):
                 refresh = self.token_class(token=token_str, verify=False)
                 family_id = refresh.get_family_id()
@@ -202,13 +206,13 @@ class TokenVerifySerializer(serializers.Serializer):
 
             if BlacklistedToken.objects.filter(token__jti=jti).exists():
                 raise ValidationError(_("Token is blacklisted"))
-            
+
         if (
-            api_settings.TOKEN_FAMILY_ENABLED and
-            "rest_framework_simplejwt.token_family" in settings.INSTALLED_APPS
-        ):  
-            FamilyMixin.check_family_expiration(token= token)
-            FamilyMixin.check_family_blacklist(token= token)
+            api_settings.TOKEN_FAMILY_ENABLED
+            and "rest_framework_simplejwt.token_family" in settings.INSTALLED_APPS
+        ):
+            FamilyMixin.check_family_expiration(token=token)
+            FamilyMixin.check_family_blacklist(token=token)
 
         return {}
 
@@ -224,7 +228,7 @@ class TokenBlacklistSerializer(serializers.Serializer):
         except AttributeError:
             pass
         return {}
-    
+
 
 class TokenFamilyBlacklistSerializer(serializers.Serializer):
     refresh = serializers.CharField(write_only=True)
@@ -238,5 +242,5 @@ class TokenFamilyBlacklistSerializer(serializers.Serializer):
             raise TokenFamilyNotConfigured()
         except TokenError as e:
             raise serializers.ValidationError({"refresh": str(e)})
-        
+
         return {"message": "Token Family blacklisted"}
